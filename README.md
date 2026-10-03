@@ -1,77 +1,46 @@
 # Product Learning API
 
-A small FastAPI CRUD service for products using SQLAlchemy, Pydantic, and PostgreSQL. The project is organized into layered components:
+A FastAPI product CRUD API backed by PostgreSQL and SQLAlchemy.
 
-- `app/main.py` starts the FastAPI app
-- `app/controllers/...` handles HTTP routes
-- `app/services/...` executes business logic
-- `app/repositories/...` reads and writes database records
-- `app/schemas/...` validates request and response payloads
+## Dependencies
 
-## Run locally
+Install the application dependencies in your Python environment:
 
-1. Create and activate a virtual environment:
-
-   ```powershell
-   py -m venv .venv
-   .venv\Scripts\Activate.ps1
-   ```
-
-2. Install dependencies:
-
-   ```powershell
-   python -m pip install fastapi "uvicorn[standard]" sqlalchemy pydantic pydantic-settings "psycopg[binary]"
-   ```
-
-3. Configure your database connection in `app/.env`:
-
-   ```env
-   APP_NAME=Product Learning API
-   DATABASE_URL=postgresql+psycopg://username:password@localhost:5432/product_learning_db_3
-   FRONTEND_ORIGIN=http://localhost:5174
-   ```
-
-   Create the PostgreSQL database first before starting the app.
-
-4. Start the API:
-
-   ```powershell
-   python -m uvicorn app.main:app --reload
-   ```
-
-5. Open the automatic docs:
-
-   - Swagger UI: http://127.0.0.1:8000/docs
-   - ReDoc: http://127.0.0.1:8000/redoc
-
-## App behavior and request flow
-
-The app exposes endpoints under `/api/v1` and the product router is mounted at `/api/v1/products`.
-
-The flow is:
-
-1. Request enters the FastAPI route
-2. Pydantic schema validates incoming JSON
-3. Controller calls the service layer
-4. Service calls the repository layer
-5. SQLAlchemy updates or reads the database
-6. A validated response model is returned to the client
-
-The product table is created automatically on startup if it is missing.
-
-## Health endpoints
-
-### GET /
-
-Returns a simple app status message.
-
-Request:
-
-```http
-GET /
+```powershell
+python -m pip install fastapi "uvicorn[standard]" sqlalchemy pydantic pydantic-settings "psycopg[binary]" PyJWT "pwdlib[argon2]" python-multipart
 ```
 
-Response:
+Configure `app/.env` with the database URL and required token settings:
+
+```env
+DATABASE_URL=postgresql+psycopg://USER:PASSWORD@localhost:5432/DB_NAME
+ACCESS_TOKEN_SECRET_KEY=<long-random-secret>
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+Keep the signing secret private. The PostgreSQL database must exist before starting the API.
+
+## Run
+
+```powershell
+python -m uvicorn app.main:app --reload
+```
+
+Interactive API docs: [Swagger UI](http://127.0.0.1:8000/docs) · [ReDoc](http://127.0.0.1:8000/redoc)
+
+## Authentication
+
+`POST /api/v1/login/createtoken` accepts `username` and `password` as form fields and returns a JWT for a valid active user. Send the token with protected requests as `Authorization: Bearer <access_token>`. In Swagger UI, use **Authorize**.
+
+Only `PUT` and `PATCH /api/v1/products/{product_id}` currently require a valid, unexpired token. Other product operations are unauthenticated.
+
+## Endpoints
+
+### `GET /`
+
+Health status. No input.
+
+Response (`200 OK`):
 
 ```json
 {
@@ -79,17 +48,11 @@ Response:
 }
 ```
 
-### GET /ping
+### `GET /ping`
 
-Returns a lightweight health check message.
+Health check. No input.
 
-Request:
-
-```http
-GET /ping
-```
-
-Response:
+Response (`200 OK`):
 
 ```json
 {
@@ -97,43 +60,28 @@ Response:
 }
 ```
 
-## Product endpoints
+### `POST /api/v1/login/createtoken`
 
-Base path: `/api/v1/products`
+Log in with `application/x-www-form-urlencoded` fields (not JSON):
 
-### Common validation rules
-
-These rules are enforced by the schemas:
-
-- `name`: 3 to 20 characters
-- `description`: optional, max 200 characters
-- `price`: greater than 0 and less than 10000
-- `stock_quantity`: between 0 and 1000
-- `is_active`: boolean
-- `product_id`: must be a positive integer
-
-### 1) Create a product
-
-Method: `POST /api/v1/products`
-
-Request example:
-
-```http
-POST /api/v1/products
-Content-Type: application/json
+```text
+username=user01&password=your-password
 ```
+
+Response (`201 Created`):
 
 ```json
 {
-  "name": "Laptop",
-  "description": "15-inch gaming laptop",
-  "price": 1299.99,
-  "stock_quantity": 12,
-  "is_active": true
+  "access_token": "<signed-jwt>",
+  "token_type": "bearer"
 }
 ```
 
-Response example (`201 Created`):
+Invalid credentials return `401 Unauthorized`.
+
+### Product response shape
+
+Successful product create, read, update, and filter results use this shape:
 
 ```json
 {
@@ -148,17 +96,31 @@ Response example (`201 Created`):
 }
 ```
 
-### 2) Get all products
+Product input rules: `name` is 3–20 characters; `description` is optional and up to 200 characters; `price` must be greater than 0 and less than 10000; `stock_quantity` must be 0–1000; `is_active` is a boolean (defaults to `true` on create).
 
-Method: `GET /api/v1/products`
+### `POST /api/v1/products`
 
-Request:
+Create a product. No authentication required.
 
-```http
-GET /api/v1/products
+Request (`application/json`):
+
+```json
+{
+  "name": "Laptop",
+  "description": "15-inch gaming laptop",
+  "price": 1299.99,
+  "stock_quantity": 12,
+  "is_active": true
+}
 ```
 
-Response example (`200 OK`):
+Response: product response shape above (`201 Created`).
+
+### `GET /api/v1/products`
+
+List all products. No input or authentication required.
+
+Response (`200 OK`):
 
 ```json
 [
@@ -171,55 +133,25 @@ Response example (`200 OK`):
     "is_active": true,
     "created_at": "2026-10-01T12:00:00",
     "updated_at": "2026-10-01T12:00:00"
-  },
-  {
-    "id": 2,
-    "name": "Mouse",
-    "description": "Wireless mouse",
-    "price": 49.99,
-    "stock_quantity": 35,
-    "is_active": true,
-    "created_at": "2026-10-01T12:05:00",
-    "updated_at": "2026-10-01T12:05:00"
   }
 ]
 ```
 
-### 3) Get one product by id
+An empty product table returns `[]`.
 
-Method: `GET /api/v1/products/{product_id}`
+### `GET /api/v1/products/{product_id}`
 
-Example:
+Get one product by its ID. Example input: `/api/v1/products/1`. No authentication required.
 
-```http
-GET /api/v1/products/1
-```
+Response (`200 OK`): one product using the product response shape above.
 
-Response example (`200 OK`):
+### `PUT /api/v1/products/{product_id}`
 
-```json
-{
-  "id": 1,
-  "name": "Laptop",
-  "description": "15-inch gaming laptop",
-  "price": 1299.99,
-  "stock_quantity": 12,
-  "is_active": true,
-  "created_at": "2026-10-01T12:00:00",
-  "updated_at": "2026-10-01T12:00:00"
-}
-```
-
-### 4) Replace a product
-
-Method: `PUT /api/v1/products/{product_id}`
-
-This is a full update. All required fields must be sent again, even if they did not change.
-
-Example request:
+Replace all product fields. Requires a bearer token. Send the complete product body:
 
 ```http
 PUT /api/v1/products/1
+Authorization: Bearer <access_token>
 Content-Type: application/json
 ```
 
@@ -233,31 +165,15 @@ Content-Type: application/json
 }
 ```
 
-Response example (`200 OK`):
+Response (`200 OK`): the updated product using the product response shape above.
 
-```json
-{
-  "id": 1,
-  "name": "Gaming Laptop",
-  "description": "Updated 15-inch gaming laptop",
-  "price": 1499.99,
-  "stock_quantity": 8,
-  "is_active": true,
-  "created_at": "2026-10-01T12:00:00",
-  "updated_at": "2026-10-01T12:20:00"
-}
-```
+### `PATCH /api/v1/products/{product_id}`
 
-### 5) Update selected fields
-
-Method: `PATCH /api/v1/products/{product_id}`
-
-This performs a partial update. Only the fields included in the body are changed.
-
-Example request:
+Update selected product fields. Requires a bearer token. Include only fields to change:
 
 ```http
 PATCH /api/v1/products/1
+Authorization: Bearer <access_token>
 Content-Type: application/json
 ```
 
@@ -268,90 +184,33 @@ Content-Type: application/json
 }
 ```
 
-Response example (`200 OK`):
+Response (`200 OK`): the updated product using the product response shape above.
 
-```json
-{
-  "id": 1,
-  "name": "Gaming Laptop",
-  "description": "Updated 15-inch gaming laptop",
-  "price": 1399.99,
-  "stock_quantity": 10,
-  "is_active": true,
-  "created_at": "2026-10-01T12:00:00",
-  "updated_at": "2026-10-01T12:25:00"
-}
-```
+### `DELETE /api/v1/products/{product_id}`
 
-### 6) Delete a product
+Delete a product by ID. Example input: `/api/v1/products/1`. No authentication required.
 
-Method: `DELETE /api/v1/products/{product_id}`
+Response: `204 No Content` with no response body.
 
-Example:
+### `GET /api/v1/products/filter`
 
-```http
-DELETE /api/v1/products/1
-```
+Filter, sort, and paginate products. All parameters are optional; no authentication required.
 
-Response: `204 No Content`
-
-There is no JSON body on success.
-
-### 7) Filter products
-
-Method: `GET /api/v1/products/filter`
-
-This endpoint supports filtering, sorting, and pagination.
-
-Example request:
+Example input:
 
 ```http
 GET /api/v1/products/filter?name_seq=lap&description_seq=gaming&min_price=500&max_price=2000&active_status=true&sort_by=price&page_size=10&page_no=1
 ```
 
-Query parameters:
+| Query parameter | Purpose |
+|---|---|
+| `name_seq` | Partial name match (3–20 characters) |
+| `description_seq` | Partial description match (3–200 characters) |
+| `min_price` / `max_price` | Price range (1–9999) |
+| `active_status` | Filter by active state (`true` or `false`) |
+| `created_after` | Filter by creation timestamp |
+| `sort_by` | `id`, `name`, `price`, `stock_quantity`, `created_at`, or `updated_at` |
+| `page_size` | Results per page (5–20; default 8) |
+| `page_no` | Page number (1–2000; default 1) |
 
-- `name_seq`: partial product name match
-- `description_seq`: partial description match
-- `min_price`: minimum allowed price
-- `max_price`: maximum allowed price
-- `active_status`: filter by active/inactive status
-- `created_after`: filter by creation date
-- `sort_by`: one of `id`, `name`, `price`, `stock_quantity`, `created_at`, `updated_at`
-- `page_size`: number of items per page (5 to 20)
-- `page_no`: page number (starting at 1)
-
-Example response (`200 OK`):
-
-```json
-[
-  {
-    "id": 1,
-    "name": "Laptop",
-    "description": "15-inch gaming laptop",
-    "price": 1299.99,
-    "stock_quantity": 12,
-    "is_active": true,
-    "created_at": "2026-10-01T12:00:00",
-    "updated_at": "2026-10-01T12:00:00"
-  }
-]
-```
-
-> Note: the `GET /api/v1/products/filter` route is registered before `GET /api/v1/products/{product_id}` to avoid the filter string being captured as an ID.
-
-## Project structure
-
-```text
-app/
-  main.py
-  controllers/
-  dependencies/
-  models/
-  repositories/
-  schemas/
-  services/
-  config_db/
-```
-
-This project is a simple learning-oriented backend for product management and is intended to demonstrate clean FastAPI layering with database persistence.
+Response (`200 OK`): an array of products using the product response shape above; no matches returns `[]`.
