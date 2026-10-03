@@ -2,6 +2,21 @@
 
 A FastAPI product CRUD API backed by PostgreSQL and SQLAlchemy.
 
+## Project structure
+
+```text
+app/
+  main.py                    # FastAPI app and router registration
+  controllers/               # HTTP endpoints
+  dependencies/              # Shared FastAPI dependencies
+  models/                    # SQLAlchemy models
+  repositories/              # Database access
+  schemas/                   # Request/response validation
+  security_pack/auth.py      # Credential checks and JWT handling
+  services/                  # Product business logic
+  config_db/                 # Settings and database session
+```
+
 ## Dependencies
 
 Install the application dependencies in your Python environment:
@@ -214,3 +229,13 @@ GET /api/v1/products/filter?name_seq=lap&description_seq=gaming&min_price=500&ma
 | `page_no` | Page number (1–2000; default 1) |
 
 Response (`200 OK`): an array of products using the product response shape above; no matches returns `[]`.
+
+## Authentication implementation
+
+- `app/controllers/user_controller.py`: `POST /api/v1/login/createtoken` reads OAuth2 username/password form fields and returns an access token after credential validation.
+- `app/security_pack/auth.py`: checks the user is active and verifies the submitted password against its stored hash with `pwdlib`. It creates an HS256 JWT containing the user ID (`sub`) and expiration, then validates the signature and expiration on protected requests.
+- `app/models/user_model.py`: defines the user record and its stored `hashed_password`.
+- `app/config_db/settings.py` and `app/.env`: supply the signing secret and token lifetime.
+- `app/controllers/product_controller.py`: injects `verify_token_and_get_current_user` into the PUT and PATCH handlers. That dependency reads the `Authorization: Bearer ...` header, loads the user, and rejects invalid, expired, missing, or inactive-user tokens.
+
+The login route issues tokens; protected route dependencies validate them. The dependency does not call the login route.
