@@ -12,16 +12,62 @@ def numbers():
     return "zindahunyaar"
 
 
-gen = numbers()
-print(gen)
-next(gen)  # Output: First
-# print(next(gen))  # Output: First, 1  
-# print("gen :", gen)
-print("//")  
-print(next(gen))  # Output: Second, 2
-# print(next(gen))  # Output: Third, 3
-# print(next(gen))  # Output: Fourth, 4
-# print(next(gen))  # Raises StopIteration
-next(gen)  
-print("//")     
-# print(gen)  
+# gen = numbers()
+# print(gen)
+# next(gen)  # Output: First
+# # print(next(gen))  # Output: First, 1  
+# # print("gen :", gen)
+# print("//")  
+# print(next(gen))  # Output: Second, 2
+# # print(next(gen))  # Output: Third, 3
+# # print(next(gen))  # Output: Fourth, 4
+# # print(next(gen))  # Raises StopIteration
+# next(gen)  
+# print("//")     
+# # print(gen)  
+
+
+
+from pwdlib import PasswordHash
+
+password_hash = PasswordHash.recommended()
+
+passwords = [
+    "K7!mQ2@xP9",
+    "rT4#vN8$kL",
+    "Z9@pW3!sX6",
+    "hM7%qR2&dK",
+    "B5*xL8@tQ1",
+    "nC4!zP9#vH",
+    "Y2$kF7@mR5",
+    "pQ8&jN3!wS",
+    "D6@xV1#bT9",
+    "sL5%qK8!mP",
+]
+
+for i, password in enumerate(passwords, start=1):
+    hashed = password_hash.hash(password)
+    print(f"{i} | {password} | {hashed}")
+
+stored_hash = "$argon2id$v=19$m=65536,t=3,p=4$jO5ENReATeCb+2Y+5eWyGQ$1BI790DTVrpSyVlizT8Kn+Z1Qc/iY3xjMo14fnGnStY"
+
+print(password_hash.verify("K7!mQ2@xP9", stored_hash))
+
+# 1 | K7!mQ2@xP9 | $argon2id$v=19$m=65536,t=3,p=4$jO5ENReATeCb+2Y+5eWyGQ$1BI790DTVrpSyVlizT8Kn+Z1Qc/iY3xjMo14fnGnStY
+# 2 | rT4#vN8$kL | $argon2id$v=19$m=65536,t=3,p=4$3oMNkLZ9kM9A7F7589/ZVg$Bet5XmbDfvKqJLphM5a+eWK/N4cRFUpLFBEcOWf4vyQ
+# 3 | Z9@pW3!sX6 | $argon2id$v=19$m=65536,t=3,p=4$hbitmoTYRE9s3B9ESRGktg$V51RwqYcW5oCL8HKzbQzG02IujT0Bv47/bAAVaxq+Z8
+# 4 | hM7%qR2&dK | $argon2id$v=19$m=65536,t=3,p=4$j9rljOKZRu6sCrCAfgQqVA$Xo4ZZ5QCZo8TuhuSUnfmdTFopJFJHgADwCINTcflrKE
+# 5 | B5*xL8@tQ1 | $argon2id$v=19$m=65536,t=3,p=4$t/gNjW6INF6dvOCBTftjwA$KqFphfIng9Tc9Ztxxr90ASrPu5M1kQqa1XDabsRjtX8
+# 6 | nC4!zP9#vH | $argon2id$v=19$m=65536,t=3,p=4$yRM2fNNxjoU11+VJf2CVQg$wWQsphtihmZji9poNt+DgybLFFCASUQ1UkBd3iw+4ds
+# 7 | Y2$kF7@mR5 | $argon2id$v=19$m=65536,t=3,p=4$OfIjVIa4fGOjwh5l/JrNsg$PadTWmCqxDZW5VdQGjCkFTTgp3OUqkQgPYXK2MFmFk0
+# 8 | pQ8&jN3!wS | $argon2id$v=19$m=65536,t=3,p=4$JCjg+X82r5YiLd/YhlIHHA$8ac++xeCHIhtWsRXebthYfG6AbZDKJPIH9qMCr9YdlE
+# 9 | D6@xV1#bT9 | $argon2id$v=19$m=65536,t=3,p=4$fY/biAQehXXAMKXAT0bRxA$TbeC0aQRefr9Su+Ttmqcz71k9c8Bm/trOt0A2mygvfU
+# 10 | sL5%qK8!mP | $argon2id$v=19$m=65536,t=3,p=4$uS4FXizG9pZpQE5DXJTKzg$bgpdJYhpfo8U0QfwzhJqKg1+Tp8Br8st86usUckpOhs
+
+
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsIm5hbWUiOiJ1c2VyMDEiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3OTEwNTE3OTB9.5FT0HX1aVi6UnLThnr04zk2-q6bl2bJeZTM4ocZUiKE",
+  "token_type": "bearer"
+}
+
+

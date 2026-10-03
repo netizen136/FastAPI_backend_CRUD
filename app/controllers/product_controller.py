@@ -3,7 +3,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Path, Query, status
 from typing import Annotated, Literal
 from app.dependencies.product_dependencies import get_product_service
+from app.models.user_model import User
 from app.schemas.product_schema import ProductCreate, ProductRead, ProductUpdate
+from app.security_pack.auth import verify_token_and_get_current_user
 from app.services.product_service import ProductService
 
 
@@ -24,11 +26,11 @@ def get_all_products(service: ProductService = Depends(get_product_service)):
 #     return service.get_product_by_id(product_id)
 
 @router.put("/{product_id}",response_model=ProductRead, status_code=status.HTTP_200_OK)
-def put_product(product_id: Annotated[int, Path(gt=0, le=1000, description="Product ID")], product_data: ProductCreate, service: ProductService = Depends(get_product_service)):
+def put_product(product_id: Annotated[int, Path(gt=0, le=1000, description="Product ID")], product_data: ProductCreate, service: ProductService = Depends(get_product_service), current_user: User = Depends(verify_token_and_get_current_user)):
     return service.put_product(product_id, product_data)
 
 @router.patch("/{product_id}",response_model=ProductRead, status_code=status.HTTP_200_OK)
-def patch_product(product_id: Annotated[int, Path(gt=0, le=1000, description="Product ID")], product_data: ProductUpdate, service: ProductService = Depends(get_product_service)):
+def patch_product(product_id: Annotated[int, Path(gt=0, le=1000, description="Product ID")], product_data: ProductUpdate, service: ProductService = Depends(get_product_service), current_user: User = Depends(verify_token_and_get_current_user)):
     return service.patch_product(product_id, product_data)
 
 @router.delete("/{product_id}",status_code=status.HTTP_204_NO_CONTENT)
@@ -61,3 +63,5 @@ def get_product_by_id(product_id: Annotated[int, Path(gt=0, le=1000, description
 
 # In product_controller.py, register the static /filter route before the /{product_id} route. 
 # Route matching follows registration order, so the static path will match first. 
+
+

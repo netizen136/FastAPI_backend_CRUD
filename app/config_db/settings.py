@@ -7,6 +7,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
+    access_token_secret_key: str
+    access_token_expire_minutes: int
+
     # Database settings
     app_name: str = "xxxx dummy Learning API xxxxx"
     database_url: str = "dummyurl+psycopg://postgres:8630@localhost:5432/x_product_learning_db_3"

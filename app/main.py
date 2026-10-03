@@ -7,6 +7,7 @@ from app.config_db.session import engine
 from fastapi import FastAPI
 
 from app.controllers.product_controller import router as productrouter
+from app.controllers.user_controller import router as userrouter
 
 # uvicorn app.main:app --reload
 
@@ -56,7 +57,7 @@ def health_check():
     return {"message": "10 ms pong!"}
 
 app.include_router(productrouter, prefix="/api/v1")
-
+app.include_router(userrouter, prefix="/api/v1")
 
 
 
